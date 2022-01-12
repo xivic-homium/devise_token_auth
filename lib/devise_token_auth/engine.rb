@@ -26,6 +26,8 @@ module DeviseTokenAuth
                  :default_callbacks,
                  :headers_names,
                  :cookie_enabled,
+                 :encrypted_cookie,
+                 :only_cookie,
                  :cookie_name,
                  :cookie_attributes,
                  :bypass_sign_in,
@@ -51,6 +53,8 @@ module DeviseTokenAuth
                                                 'uid': 'uid',
                                                 'token-type': 'token-type' }
   self.cookie_enabled                       = false
+  self.encrypted_cookie                     = false
+  self.only_cookie                          = false
   self.cookie_name                          = 'auth_cookie'
   self.cookie_attributes                    = {}
   self.bypass_sign_in                       = true

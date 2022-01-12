@@ -38,10 +38,12 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     # gets values from cookie if configured and present
     parsed_auth_cookie = {}
     if DeviseTokenAuth.cookie_enabled
-      auth_cookie = request.cookies[DeviseTokenAuth.cookie_name]
-      if auth_cookie.present?
-        parsed_auth_cookie = JSON.parse(auth_cookie)
+      auth_cookie = if DeviseTokenAuth.encrypted_cookie
+        cookies.encrypted[DeviseTokenAuth.cookie_name]
+      else
+        cookies[DeviseTokenAuth.cookie_name]
       end
+      parsed_auth_cookie = JSON.parse(auth_cookie) if auth_cookie.present?
     end
 
     # parse header for values necessary for authentication
@@ -108,7 +110,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       auth_header = @resource.build_auth_header(@token.token, @token.client)
 
       # update the response header
-      response.headers.merge!(auth_header)
+      response.headers.merge!(auth_header) unless DeviseTokenAuth.only_cookie
 
       # set a server cookie if configured
       if DeviseTokenAuth.cookie_enabled
@@ -139,7 +141,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       _auth_header_from_batch_request = auth_header_from_batch_request
 
       # update the response header
-      response.headers.merge!(_auth_header_from_batch_request)
+      response.headers.merge!(_auth_header_from_batch_request) unless DeviseTokenAuth.only_cookie
 
       # set a server cookie if configured
       if DeviseTokenAuth.cookie_enabled
@@ -149,7 +151,12 @@ module DeviseTokenAuth::Concerns::SetUserByToken
   end
 
   def set_cookie(auth_header)
-    cookies[DeviseTokenAuth.cookie_name] = DeviseTokenAuth.cookie_attributes.merge(value: auth_header.to_json)
+    cookie_val = DeviseTokenAuth.cookie_attributes.merge(value: auth_header.to_json)
+    if DeviseTokenAuth.encrypted_cookie
+      cookies.encrypted[DeviseTokenAuth.cookie_name] = cookie_val
+    else
+      cookies[DeviseTokenAuth.cookie_name] = cookie_val
+    end
   end
 
   def is_batch_request?(user, client)
